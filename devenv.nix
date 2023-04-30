@@ -6,6 +6,7 @@
     pkgs.jq
     pkgs.git
     pkgs.toilet
+    pkgs.openssl
   ]);
 
   scripts.hello.exec = "toilet -f mono12 -F metal 'Welcome'";
@@ -13,12 +14,12 @@
   languages.rust = {
     enable = true;
     # https://devenv.sh/reference/options/#languagesrustversion
-    version = "latest";
+    version = "stable";
   };
 
-#  scripts.tests.exec = ''
-#    cargo test 
-#  '';
+  scripts.tests.exec = ''
+    cargo test 
+  '';
 
   pre-commit.hooks = {
     clippy.enable = true;
