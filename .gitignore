@@ -1,0 +1,13 @@
+.history
+/target
+/result
+
+file_list.txt
+repos-all
+groups-all
+
+# Devenv
+.devenv*
+devenv.local.nix
+.pre-commit-config.yaml
+.direnv/

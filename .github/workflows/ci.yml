@@ -1,0 +1,36 @@
+name: ci 
+
+on:
+  push:
+
+jobs:
+  build-analyse-tool:
+    name: "Build analyse tool"
+    runs-on: ubuntu-latest 
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Use Devenv Cache
+        uses: cachix/cachix-action@v12
+        with:
+          name: devenv
+
+      - name: Install Devenv
+        run: nix-env -if https://github.com/cachix/devenv/tarball/latest
+
+      - run: cachix watch-exec devenv shell cargo -v
+        env:
+          NIXPKGS_ALLOW_UNFREE: 1
+
+      - name: Cargo test
+        run: devenv shell cargo test
+
+      - name: Cargo build
+        run: devenv shell cargo build --release
+
+      - name: Store executable 
+        run: |
+          ./target/release/analyse-changed-groups-repos --help
