@@ -1,13 +1,12 @@
-{ pkgs, lib, ... }:
+{ pkgs, openssl, ... }:
 
 {
-  packages = lib.optionals pkgs.stdenv.isDarwin (with pkgs.darwin.apple_sdk; [
-    frameworks.Security
+  packages = [
     pkgs.jq
     pkgs.git
     pkgs.toilet
     pkgs.openssl
-  ]);
+  ];
 
   scripts.hello.exec = "toilet -f mono12 -F metal 'Welcome'";
 
