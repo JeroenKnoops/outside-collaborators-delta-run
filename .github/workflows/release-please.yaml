@@ -5,6 +5,7 @@ on:
       - main
 jobs:
   release-please:
+    environment: release
     runs-on: ubuntu-22.04
     steps:
       - uses: google-github-actions/release-please-action@c078ea33917ab8cfa5300e48f4b7e6b16606aede # ratchet:google-github-actions/release-please-action@v3
