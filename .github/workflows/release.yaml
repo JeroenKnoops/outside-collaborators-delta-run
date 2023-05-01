@@ -1,0 +1,73 @@
+name: Attach binaries, sbom and provenance to releases
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+
+jobs:
+  attach:
+    name: Attach binaries, sbom and provenance to releases
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # ratchet:actions/checkout@v3
+
+      - uses: cachix/install-nix-action@v20
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Devenv Cache
+        uses: cachix/cachix-action@v12
+        with:
+          name: devenv
+
+      - name: Install Devenv
+        run: nix-env -if https://github.com/cachix/devenv/tarball/latest
+
+      - name: Cargo test
+        run: devenv shell cargo test
+
+      - name: Cargo build
+        run: devenv shell cargo build --release
+
+      - name: Test executable 
+        run: |
+          ./target/release/analyse-changed-groups-repos --help
+          file ./target/release/analyse-changed-groups-repos
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@7319e4733ec7a184d739a6f412c40ffc339b69c7 # ratchet:svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.RELEASE_TOKEN }}
+          file: target/release/analyse-changed-groups-repos
+          tag: ${{ github.ref }}
+          overwrite: true
+          asset_name: analyse-changed-groups-repos 
+
+      - name: Generate provenance
+        uses: philips-labs/slsa-provenance-action@752766b8a3b1ebd09d599e163eeec8fa39e677aa # ratchet:philips-labs/slsa-provenance-action@v0.8.0
+        with:
+          command: generate
+          subcommand: files
+          arguments: --artifact-path target/release/analyse-changed-groups-repos --output-path provenance.json
+
+      - name: Upload provenance to release
+        uses: svenstaro/upload-release-action@7319e4733ec7a184d739a6f412c40ffc339b69c7 # ratchet:svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.RELEASE_TOKEN }}
+          file: provenance.json
+          tag: ${{ github.ref }}
+          overwrite: true
+          asset_name: slsa-provenance.json
+
+      - uses: anchore/sbom-action@422cb34a0f8b599678c41b21163ea6088edb2624 # ratchet:anchore/sbom-action@v0.14.1
+        with:
+          artifact-name: sbom.spdx.json
+          github-token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: publish SBOM assets
+        uses: anchore/sbom-action/publish-sbom@422cb34a0f8b599678c41b21163ea6088edb2624 # ratchet:anchore/sbom-action/publish-sbom@v0.14.1
+        with:
+          sbom-artifact-match: ".*\\.spdx\\.json$"
+          github-token: ${{ secrets.RELEASE_TOKEN }}
