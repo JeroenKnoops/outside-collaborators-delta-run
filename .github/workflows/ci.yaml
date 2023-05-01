@@ -8,7 +8,8 @@ jobs:
     name: "Build analyse tool"
     runs-on: ubuntu-latest 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # ratchet:actions/checkout@v3
       - uses: cachix/install-nix-action@v20
         with:
           extra_nix_config: |
@@ -22,13 +23,12 @@ jobs:
       - name: Install Devenv
         run: nix-env -if https://github.com/cachix/devenv/tarball/latest
 
-
       - name: Cargo test
         run: devenv shell cargo test
 
       - name: Cargo build
         run: devenv shell cargo build --release
 
-      - name: Store executable 
+      - name: Test executable 
         run: |
           ./target/release/analyse-changed-groups-repos --help
